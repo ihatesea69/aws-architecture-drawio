@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+*.bkp
+.$*.drawio.bkp
+Sidebar-AWS4.js
