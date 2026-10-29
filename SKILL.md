@@ -3,9 +3,8 @@ name: auto/aws-architecture-drawio
 description: Vẽ sơ đồ kiến trúc AWS bằng draw.io theo phong cách riêng của người dùng (icon AWS4 đặt gần nhau, mũi tên đánh số, chú giải + tiêu đề lớn, không ô ghi chú) từ script Python, và kiểm bằng đo (hình học, XML, tên icon, lint style, xuất PNG)
 triggers: draw.io diagram, drawio, mxGraph XML, AWS architecture diagram, architecture diagram style, vẽ kiến trúc, sơ đồ kiến trúc, vẽ drawio, Sidebar-AWS4, resIcon, verify diagram without screenshot, export diagram png for README
 source: auto
-session_key: dashboard:chat-127-1793070415
 created_at: 2026-10-28T08:15:03+00:00
-updated_at: 2026-10-29T16:00:00+00:00
+updated_at: 2026-10-29T16:20:00+00:00
 ---
 
 ## Khi nào dùng
@@ -15,6 +14,10 @@ project nào. Skill này chỉ quy định cách vẽ, không quy định vẽ c
 Mọi luật trong mục "Phong cách" đều đo từ hai sơ đồ người dùng đã tự hoàn thiện bằng tay trong draw.io: một file
 3 trang và một file 1 trang, tổng cộng 4 trang, 62 mũi tên, 60 icon. Chỗ nào bản sửa tay khác bản script sinh ra
 thì theo bản sửa tay, và skill ghi rõ chỗ đó.
+
+Ngày 2026-10-29 người dùng yêu cầu đổi cỡ trên một sơ đồ 1080 x 1080: "cho các icon bự lên, mũi tên cũng bự lên,
+fill đầy 1080 x 1080 nhưng không bị trùng lấp". Từ đó cỡ chuẩn là icon 80 px, nhãn 13 px, mũi tên 2,5 px,
+số 30 px. Cỡ cũ (60 / 11 / 1,5 / 24) chỉ còn đúng với hai sơ đồ đã sửa tay trước ngày đó.
 
 ## Phong cách
 
@@ -32,36 +35,51 @@ thì theo bản sửa tay, và skill ghi rõ chỗ đó.
 | Region | `grIcon=mxgraph.aws4.group_region;` viền đứt `#00A4A6`, tiêu đề `#147EBA` 13 px đậm, nằm trong account, cách mép trái 20 px và mép trên 30 px |
 | Khung logic (một stack, một giải pháp, một đơn vị deploy) | hình chữ nhật trơn, viền liền `#CD2264`, tiêu đề `#CD2264` 13 px đậm ở góc trên trái, `spacingLeft=8;spacingTop=2;`, không icon, không tô nền |
 | Step Functions workflow | dùng group chính thức `group_aws_step_functions_workflow`, màu `#CD2264` |
+| VPC (`d.vpc()`) | group chính thức `group_vpc2`, viền liền tím `#8C4FFF`, tiêu đề tím. VPC luôn vẽ bằng khung này, không bao giờ bằng khung logic hồng |
+| Availability Zone (`d.az()`) | hình chữ nhật viền đứt xanh `#147EBA`, tiêu đề căn giữa phía trên, đúng style trong sidebar |
+| Subnet (`d.subnet(public=True/False)`) | `group_security_group` không viền icon: public viền `#7AA116` nền `#F2F6E8`, private viền `#00A4A6` nền `#E6F6F7` |
+| Compute trên Fargate (`d.service()`) | hình chữ nhật viền đứt cam `#ED7100` dày 2 px, không tiêu đề. Bên trong đặt icon AWS Fargate và mỗi vai trò **một** Task (`d.glyph(..., "ecs_task", ...)`) |
+
+- Resource có hình riêng trong AWS4 thì vẽ ra, không chỉ ghi vào tên khung. Ví dụ NAT Gateway: `d.glyph(..., "nat_gateway", ...)`
+  đặt trong public subnet của AZ chứa nó. Người dùng đã hỏi "sao lại không vẽ NAT gateway" khi nó chỉ nằm trong tên khung.
+- Gọn: mỗi vai trò một task, một khung Fargate chung cho cả cluster. Tách mỗi service một khung, hoặc vẽ
+  nhiều task cho cùng một vai trò, đã bị người dùng chê là quá nhiều ("sao nhiều Service Task vậy? gọn lại").
+- Khung compute có thể nằm ngang qua cả hai cột AZ, giống hình mẫu ECS của AWS mà người dùng gửi.
 
 - Các account đặt cạnh nhau, cách nhau 30 px: account nguồn hoặc của khách bên trái, account trung tâm hoặc quản lý bên phải.
 - Tiêu đề khung ghi vai trò ("Customer account", "Central account"), không bao giờ ghi account ID hay tên khách.
 - Khung logic đặt tên theo việc nó làm ("Usage analytics"), không theo tên repo sinh ra nó. Tên repo ghi vào một dòng chú giải.
 
 ### Icon và nhãn
-- Mọi icon có kích thước 60 x 60, lấy từ thư viện AWS4: `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<tên>;`,
+- Mọi icon có kích thước 80 x 80, lấy từ thư viện AWS4: `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<tên>;`,
   `strokeColor=#ffffff`. Màu nền của icon là màu mà palette của chính draw.io gán cho icon đó (`colors_from_sidebar()`).
+- Hình dạng nét của AWS4 (Task, NAT Gateway, ...) vẽ bằng `d.glyph()`, cùng ô 80 x 80, màu theo họ dịch vụ
+  (cam cho container, tím cho networking).
 - Người dùng vẽ bằng `shape=mxgraph.aws4.user`, màu `#232F3D` ("Developer", "Viewers").
-- Sản phẩm không có icon AWS4 thì dùng logo của chính sản phẩm, ảnh 60 x 60 (`Diagram.logo()`, nhúng dạng data URI).
+- Sản phẩm không có icon AWS4 thì dùng logo của chính sản phẩm, ảnh 80 x 80 (`Diagram.logo()`, nhúng dạng data URI).
   Không mượn một icon AWS không liên quan.
-- Nhãn icon: 11 px **đậm**, màu `#232F3E`, tối đa 2 dòng. Dòng 1 là tên dịch vụ ("Amazon S3", "Lambda"), dòng 2 là
+- Nhãn icon: 13 px **đậm**, màu `#232F3E`, tối đa 2 dòng. Dòng 1 là tên dịch vụ ("Amazon S3", "Lambda"), dòng 2 là
   vai trò của nó trong kiến trúc ("raw data", "collector"). Mỗi dòng nên dưới 20 ký tự; trung vị đo được là 10-11 ký tự.
+  Trên trang 1080 nhiều icon thì chỉ dùng 1 dòng tên, vai trò để chú giải nói.
   Người dùng đã tự tay in đậm 33 trong 35 nhãn, nên nhãn chữ thường do script sinh ra chính là thứ đã bị sửa.
-- Nhãn mặc định nằm dưới icon. Khi có mũi tên đi ra từ cạnh dưới icon thì đặt nhãn lên trên, để mũi tên không cắt qua chữ.
-- Bố trí gần nhau: khoảng 140 px giữa tâm hai icon cùng hàng (đo được 110-200 px), 130-220 px giữa hai icon cùng cột.
-  Chính người dùng mô tả phong cách này là "gần nhau, không viết chữ nhiều".
+- Nhãn mặc định nằm dưới icon. Khi có mũi tên đi ra từ cạnh dưới icon thì đặt nhãn lên trên, hoặc sang trái/phải.
+  Mũi tên không bao giờ cắt qua chữ.
+- Bố trí gần nhau nhưng lấp đầy trang: khoảng 110-140 px giữa tâm hai icon cùng hàng, 130-220 px giữa hai icon
+  cùng cột. Khung và icon trải hết trang 1080 x 1080, chú giải và tiêu đề lấp phần dưới.
 - Người dùng có thể cố ý giữ một icon cũ, ví dụ `quicksight` cho dashboard. Thư viện hiện tại đã bỏ icon này
   nhưng draw.io vẫn vẽ được. Phải tôn trọng lựa chọn đó: truyền icon vào `--allow-missing`, rồi chứng minh icon
   vẫn hiện bằng `png_measure.py`.
 
 ### Mũi tên và số
-- Mũi tên: `edgeStyle=none;rounded=0;endArrow=block;endFill=1;strokeColor=#545B64;strokeWidth=1.5;`.
+- Mũi tên: `edgeStyle=none;rounded=0;endArrow=block;endFill=1;strokeColor=#545B64;strokeWidth=2.5;endSize=8;`.
   Chỉ có đoạn ngang và đoạn dọc, đường đi đặt bằng waypoint cụ thể, và hai đầu đều gắn vào hình.
 - Mũi tên nét đứt (`dashed=1;strokeColor=#879596;`) chỉ dùng cho một nghĩa, thường là "account trung tâm chủ động
   đọc account kia" (pull, AssumeRole). Chú giải phải ghi nét đứt nghĩa là gì.
 - Không ghi chữ trên mũi tên nào (0 trên 62 mũi tên có chữ). Mũi tên nào quan trọng thì đánh số.
-- Số: hình tròn 24 x 24, nền `#232F3E`, viền trắng 2 px, số trắng 11 px đậm. Tâm của số đặt cách đường kẻ 18 px,
+- Số: hình tròn 30 x 30, nền `#232F3E`, viền trắng 2 px, số trắng 14 px đậm. Tâm của số đặt cách đường kẻ 22 px,
   không bao giờ đè lên đường: phía trên đoạn ngang, bên phải đoạn dọc, trên đoạn dài nhất của mũi tên.
-  Trên trang người dùng đã sửa tay, cả 14/14 số đều cách đường 18-24 px.
+  Khi đoạn đó cắt qua viền khung, dời số bằng `badge_t` (vị trí 0..1 trên đoạn), `badge_seg` (chọn đoạn khác)
+  hoặc `badge="left"/"below"`, cho tới khi `check()` hết báo "sits on the border".
 - Số chạy từ 1 đến N theo thứ tự đọc: trái sang phải, trên xuống dưới, theo dòng dữ liệu.
 - Nhiều mũi tên cùng đi vào một icon thì vào ở các điểm khác nhau trên một cạnh (`entry=(0, 0.25)`, `(0, 0.75)`),
   không nhập thành một đường. Mũi tên giữa hai account đi qua khoảng trống giữa hai khung account.
@@ -84,7 +102,8 @@ thì theo bản sửa tay, và skill ghi rõ chỗ đó.
 ## Quy trình
 1. Tải thư viện icon một lần mỗi phiên vào `$KIROCREW_SCRATCH`. Thư viện này thay đổi theo thời gian nên không chép sẵn vào skill:
    `https://raw.githubusercontent.com/jgraph/drawio/dev/src/main/webapp/js/diagramly/sidebar/Sidebar-AWS4.js`
-2. Chép `examples/build_example.py` vào project rồi thay bố cục. Giữ nguyên thứ tự gọi: khung, icon, mũi tên,
+2. Chép `examples/build_example.py` (hai account) hoặc `examples/build_vpc_fargate_example.py` (VPC, AZ, subnet,
+   NAT Gateway, khung Fargate) vào project rồi thay bố cục. Giữ nguyên thứ tự gọi: khung, icon, mũi tên,
    `legend()`, `title()`, `check()`, `write()`. Toạ độ là pixel tuyệt đối trên trang; thư viện tự đổi sang toạ độ
    tương đối theo khung cha mà draw.io lưu. Mọi hằng số style nằm trong `scripts/aws_drawio.py`: import thư viện,
    đừng gõ lại style.
@@ -100,7 +119,8 @@ thì theo bản sửa tay, và skill ghi rõ chỗ đó.
 6. Xuất PNG bằng draw.io desktop CLI. Phải tìm đường dẫn `draw.io.exe`, vì nó không phải lúc nào cũng có trong PATH:
    `& "<đường dẫn>\draw.io.exe" -x -f png -s 2 -o <out.png> <file.drawio>`
    rồi chạy `python scripts/png_measure.py <out.png> <file.drawio> 2`. Kết quả đúng là: ảnh vuông; chỉ có các chunk
-   IHDR/IDAT/IEND, tức không nhúng XML của sơ đồ trong PNG; và mỗi ô icon có khoảng 8-13 % điểm trắng. Icon trống,
+   IHDR/IDAT/IEND, tức không nhúng XML của sơ đồ trong PNG; và mỗi ô icon có khoảng 8-21 % điểm trắng (đo trên hai ví dụ
+   ở cỡ 80 px; script không đo được hình dạng nét như Task và NAT Gateway). Icon trống,
    tức tên icon không tồn tại, đo ra gần 0 %. Script tự từ chối đo khi PNG không khớp với file.
 7. Báo cáo từng phép kiểm đã đo được gì, và nói rõ là màu sắc và độ cân đối chưa được đánh giá: người dùng tự mở
    file để xem. Trên máy này, không tự kiểm file local bằng cách chụp màn hình headless.
