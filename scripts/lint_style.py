@@ -10,7 +10,10 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 
-ICON = 60
+ICON = 80
+LABEL_FONT = 13
+EDGE_WIDTH = "2.5"
+BADGE = 30
 LABEL_MAX_CHARS = 20
 
 
@@ -145,7 +148,7 @@ def main(argv):
             lines = plain_lines(c.get("value"))
             name = (lines[0] if lines else st.get("resIcon", st.get("shape", "?")))[:30]
             if round(w) != ICON or round(h) != ICON:
-                W(pname, f"icon '{name}' is {w:.0f}x{h:.0f}, house size is 60x60")
+                W(pname, f"icon '{name}' is {w:.0f}x{h:.0f}, house size is {ICON}x{ICON}")
             if not lines and cid in stacked:
                 continue
             if not lines:
@@ -159,8 +162,8 @@ def main(argv):
             if max(len(l) for l in lines) > LABEL_MAX_CHARS:
                 W(pname, f"icon label line '{max(lines, key=len)}' is {max(len(l) for l in lines)} chars (aim <= {LABEL_MAX_CHARS})")
             bold = st.get("fontStyle", "0") in ("1", "3", "5", "7") or "<b>" in html.unescape(c.get("value") or "")
-            if not bold or float(st.get("fontSize", 12)) != 11:
-                W(pname, f"icon label '{name}' is {st.get('fontSize', '12')} px {'bold' if bold else 'regular'}, house style is 11 px bold")
+            if not bold or float(st.get("fontSize", 12)) != LABEL_FONT:
+                W(pname, f"icon label '{name}' is {st.get('fontSize', '12')} px {'bold' if bold else 'regular'}, house style is {LABEL_FONT} px bold")
 
         # ---- frames ----
         for cid, (r, st) in roles.items():
@@ -185,8 +188,8 @@ def main(argv):
             if st.get("endArrow") != "block" or st.get("endFill") != "1":
                 W(pname, f"arrow {cid} head is {st.get('endArrow')}/{st.get('endFill')}, house style is block filled")
             color = st.get("strokeColor", "").upper()
-            if color not in ("#545B64", "#879596") or st.get("strokeWidth") != "1.5":
-                W(pname, f"arrow {cid} is {color or 'default'} width {st.get('strokeWidth', '1')}, house style is #545B64 (dashed #879596) 1.5")
+            if color not in ("#545B64", "#879596") or st.get("strokeWidth") != EDGE_WIDTH:
+                W(pname, f"arrow {cid} is {color or 'default'} width {st.get('strokeWidth', '1')}, house style is #545B64 (dashed #879596) {EDGE_WIDTH}")
             sx, sy, sw, sh = absbox(s)
             tx, ty, tw, th = absbox(t)
             a = (sx + float(st.get("exitX", 0.5)) * sw, sy + float(st.get("exitY", 0.5)) * sh)
@@ -212,8 +215,8 @@ def main(argv):
                 continue
             badge_nums.append(int(v))
             x, y, w, h = absbox(cells[cid])
-            if round(w) != 24 or round(h) != 24:
-                W(pname, f"badge {v} is {w:.0f}x{h:.0f}, house size is 24x24")
+            if round(w) != BADGE or round(h) != BADGE:
+                W(pname, f"badge {v} is {w:.0f}x{h:.0f}, house size is {BADGE}x{BADGE}")
             cx, cy = x + w / 2, y + h / 2
             best = min((_dist(cx, cy, p1, p2) for _, poly in polys for p1, p2 in zip(poly, poly[1:])), default=None)
             if best is not None and not 12 <= best <= 26:

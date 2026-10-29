@@ -5,12 +5,17 @@ house style, and for checking them by measurement instead of by screenshot.
 
 ![Example diagram](docs/example.png)
 
+![VPC and Fargate example](docs/example-vpc-fargate.png)
+
 ## The style in one paragraph
 
-Square white canvas. AWS account frames side by side, regions nested inside, plain boxes for logical units.
-60 x 60 AWS4 icons placed close together, each with a bold two-line label (service name, then its role).
-Orthogonal arrows with no text on them; each important arrow gets a numbered badge beside the line. One legend
-bottom left explains every number in one sentence, and a large two-line title sits bottom right. No note boxes.
+Square white canvas, 1080 x 1080. AWS account frames side by side, regions nested inside, plain boxes for logical
+units. Networks use the official groups: VPC, Availability Zone, public and private subnets. Compute on Fargate is
+one dashed orange frame holding the Fargate icon and one ECS task per role. Resources with their own AWS4 shape,
+such as a NAT Gateway, are drawn rather than named in a frame title. 80 x 80 AWS4 icons placed close together,
+each with a bold 13 px label of one or two lines (service name, then its role). Orthogonal 2.5 px arrows with no
+text on them; each important arrow gets a numbered badge beside the line. One legend bottom left explains every
+number in one sentence, and a large two-line title sits bottom right. No note boxes.
 The full rules are in [SKILL.md](SKILL.md) (written in Vietnamese).
 
 ## Contents
@@ -23,6 +28,7 @@ The full rules are in [SKILL.md](SKILL.md) (written in Vietnamese).
 | `scripts/lint_style.py` | Checks any `.drawio` file, hand-edited ones included, against the style |
 | `scripts/png_measure.py` | Measures a PNG exported by the draw.io CLI: size, no embedded XML, icons rendered |
 | `examples/build_example.py` | A generic two-account example; copy it to start a new diagram |
+| `examples/build_vpc_fargate_example.py` | VPC with two AZs, a NAT Gateway and one Fargate frame of ECS tasks |
 
 ## Quick start
 

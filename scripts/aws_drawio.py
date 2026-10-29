@@ -22,12 +22,15 @@ import re
 from xml.sax.saxutils import escape
 
 # ---- measured constants --------------------------------------------------------------
-ICON = 60
-BADGE = 24
-BADGE_GAP = 18            # badge centre to line centre: beside the line, never on it
-LABEL_FONT = 11           # icon labels: 11 px bold
-LABEL_CHAR_PX = 6.6       # average width of an 11 px bold Helvetica character
-LABEL_LINE_PX = 14
+ICON = 80                 # owner, 2026-10-29: "cho các icon bự lên" (was 60)
+BADGE = 30                # was 24
+BADGE_GAP = 22            # badge centre to line centre: beside the line, never on it
+LABEL_FONT = 13           # icon labels: 13 px bold (was 11)
+LABEL_CHAR_PX = 7.8       # average width of a 13 px bold Helvetica character
+LABEL_LINE_PX = 16
+EDGE_WIDTH = 2.5          # owner, 2026-10-29: "mũi tên cũng bự lên" (was 1.5)
+EDGE_HEAD = 8             # draw.io endSize for the block arrowhead
+BADGE_FONT = 14
 LEGEND_FONT = 10          # legend: 10 px bold, grey, no box
 LEGEND_CHAR_PX = 5.8
 LEGEND_LINE_PX = 13
@@ -138,6 +141,47 @@ class Diagram:
                     "container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;"
                     "grIcon=mxgraph.aws4.group_aws_step_functions_workflow;fillColor=none;verticalAlign=top;"
                     f"align=left;spacingLeft=30;strokeColor={ACCOUNT};fontColor={ACCOUNT};dashed=0;")
+
+    # ---- network and container frames (owner, 2026-10-29: "VPC có khung VPC mà sao lại vẽ khung đó") ----
+    _AWS_GROUP = (PTS + "outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=13;fontStyle=1;"
+                  "container=1;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;"
+                  "verticalAlign=top;align=left;spacingLeft=30;dashed=0;")
+
+    def vpc(self, key, label, x, y, w, h, parent=None):
+        """Official VPC group: purple solid border, VPC icon top-left."""
+        self._frame(key, label, x, y, w, h, parent, "vpc",
+                    self._AWS_GROUP + "grIcon=mxgraph.aws4.group_vpc2;strokeColor=#8C4FFF;fillColor=none;"
+                    "fontColor=#8C4FFF;")
+
+    def az(self, key, label, x, y, w, h, parent=None):
+        """Availability Zone: dashed blue rectangle, title centred on top (the sidebar's own style)."""
+        self._frame(key, label, x, y, w, h, parent, "az",
+                    "fillColor=none;strokeColor=#147EBA;dashed=1;verticalAlign=top;fontStyle=1;fontSize=13;"
+                    "fontColor=#147EBA;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;")
+
+    def subnet(self, key, label, x, y, w, h, parent=None, public=False):
+        """Public (green) or private (teal) subnet group, as in the AWS4 sidebar."""
+        colors = ("#7AA116", "#F2F6E8", "#248814") if public else ("#00A4A6", "#E6F6F7", "#147EBA")
+        self._frame(key, label, x, y, w, h, parent, "subnet",
+                    self._AWS_GROUP + "grIcon=mxgraph.aws4.group_security_group;grStroke=0;"
+                    f"strokeColor={colors[0]};fillColor={colors[1]};fontColor={colors[2]};")
+
+    def service(self, key, x, y, w, h, parent=None, label=""):
+        """Compute frame (an ECS cluster or service on Fargate): dashed orange, usually untitled because the
+        Fargate icon placed inside names it. Holds one task glyph per role."""
+        self._frame(key, label, x, y, w, h, parent, "box",
+                    "rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#ED7100;dashed=1;strokeWidth=2;"
+                    "fontColor=#ED7100;fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=8;"
+                    "container=1;collapsible=0;recursiveResize=0;")
+
+    def glyph(self, key, frame, cx, cy, shape, lines, pos="below", color=None):
+        """AWS4 outline resource shape (ecs_task, nat_gateway, ...), not a square service icon.
+        Colour defaults to the service family: orange for containers, purple for networking."""
+        fill = color or {"ecs_task": "#ED7100", "nat_gateway": "#8C4FFF"}.get(shape, INK)
+        style = ("sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;"
+                 f"fillColor={fill};strokeColor=none;dashed=0;html=1;whiteSpace=wrap;fontSize={LABEL_FONT};"
+                 f"fontStyle=1;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.{shape};")
+        self._node(key, frame, cx, cy, style, lines, pos)
 
     # ---- nodes --------------------------------------------------------------------------
     def _node(self, key, frame, cx, cy, style, lines, pos):
@@ -270,7 +314,7 @@ class Diagram:
         for i, e in enumerate(self.edges):
             color = EDGE_DASHED if e["dashed"] else EDGE
             style = (f"edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeColor={color};"
-                     f"strokeWidth=1.5;exitX={e['ex'][0]};exitY={e['ex'][1]};exitDx=0;exitDy=0;"
+                     f"strokeWidth={EDGE_WIDTH};endSize={EDGE_HEAD};exitX={e['ex'][0]};exitY={e['ex'][1]};exitDx=0;exitDy=0;"
                      f"entryX={e['en'][0]};entryY={e['en'][1]};entryDx=0;entryDy=0;"
                      + ("dashed=1;" if e["dashed"] else ""))
             pts = "".join(f'<mxPoint x="{px:.0f}" y="{py:.0f}"/>' for px, py in e["points"])
@@ -284,7 +328,7 @@ class Diagram:
             bx, by = e["badge"]
             out.append(f'<mxCell id="b{e["num"]}" value="{e["num"]}" style="ellipse;whiteSpace=wrap;html=1;'
                        f'aspect=fixed;fillColor={INK};strokeColor=#FFFFFF;strokeWidth=2;fontColor=#FFFFFF;'
-                       f'fontStyle=1;fontSize=11;" vertex="1" parent="1"><mxGeometry x="{bx:.0f}" y="{by:.0f}" '
+                       f'fontStyle=1;fontSize={BADGE_FONT};" vertex="1" parent="1"><mxGeometry x="{bx:.0f}" y="{by:.0f}" '
                        f'width="{BADGE}" height="{BADGE}" as="geometry"/></mxCell>')
         out.append("</root></mxGraphModel></diagram>")
         return "\n".join(out)
